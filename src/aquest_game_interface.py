@@ -13,23 +13,13 @@ Student name: Samuel Engida
     '''
 from room import *
 from aquest_game import *
+from tkinter import *
+
 DIR_LABELS = ['N', 'S', 'E', 'W']
 OPTIONS = DIR_LABELS + ['I', 'T', 'D', 'U', 'L', 'Q']
 QUESTION = 'What do you want to do? '
-from tkinter import *
-
-# 
-aquest_rooms_lst, acquest_rooms_keys = get_file('aquest_rooms.txt')
-aquest_items_lst, acquest_items_keys = get_file('aquest_items.txt')
-puzzles_n_monsters_lst, puzles_n_monsters_keys = get_file('puzzles_n_monsters.txt')
-
 EMPTY = ''
 
-items = create_objects(aquest_items_lst, acquest_items_keys)
-rooms = create_objects(aquest_rooms_lst, acquest_rooms_keys, [], items)
-puzzles_n_monsters = create_objects(puzzles_n_monsters_lst, puzles_n_monsters_keys, rooms, items)
-    
-game = Game(rooms)
 '''
 class: GameInterface
 Description:
@@ -39,12 +29,16 @@ to perform tasks Button objects demand. The class has various methods to handle 
 Button objects.
 '''
 class GameInterface:
-    def __init__ (self):
+    def __init__ (self, game, items, rooms, puzzles_n_monsters):
 
         # Instantiation of the window and objects on the window
+        self.game = game
+        self.items = items
+        self.rooms = rooms
+        self.puzzles_n_monsters = puzzles_n_monsters
         self.window = Tk()
         self.window.title('Align Quest')
-        courtyard_img = PhotoImage(file = game.current_room.picture)
+        courtyard_img = PhotoImage(file = self.game.current_room.picture)
         main_frame = Frame(self.window)
         main_frame.pack(side = LEFT, fill = BOTH)
         self.image = Label(main_frame)
@@ -54,9 +48,9 @@ class GameInterface:
         text_frame.pack(side = LEFT, fill = BOTH)
         buttons_frame = Frame(self.window)
         buttons_frame.pack(side = RIGHT)
-        self.room_name = Label(text_frame, text = game.current_room.name, wraplength = 300,
+        self.room_name = Label(text_frame, text = self.game.current_room.name, wraplength = 300,
                                 font = 'Helvetica 12 bold')
-        self.room_description = Label(text_frame, text = game.current_room.description,
+        self.room_description = Label(text_frame, text = self.game.current_room.description,
                                wraplength = 300, font = 'Helvetica 10')        
         for each in game.current_room.items:
             self.room_items_text = each.name + ' here in the room.\n'
@@ -94,7 +88,7 @@ class GameInterface:
     def process_quit(self):
         # handles quit button.
         title = 'Quit'
-        rank, score = game.rank()
+        rank, score = self.game.rank()
         msg = ('Your Score is: ' + str(score) + '\n' +
                'You are a ' + rank + '\n' +
                'Good bye!')
@@ -108,34 +102,33 @@ class GameInterface:
     def look_handler(self):
         # handles the look button
         to_be_examined = (self.entry.get()).upper()
-        item_desc = game.look(to_be_examined)
+        item_desc = self.game.look(to_be_examined)
         msg = 'Looking for ' + to_be_examined + '.........'
         self.update_popup(item_desc, msg)
     def take_handler(self):
         # handles the take button
         to_be_taken = (self.entry.get()).upper()
-        take_feedback = game.take(to_be_taken)
+        take_feedback = self.game.take(to_be_taken)
         msg = 'Taking ' + to_be_taken + '........'
         self.update_popup(take_feedback, msg)
         self.update_items()
     def drop_handler(self):
         # handles the drop button 
         to_be_dropped = (self.entry.get()).upper()
-        drop_feedback = game.drop(to_be_dropped)
+        drop_feedback = self.game.drop(to_be_dropped)
         msg = 'Droping ' + to_be_dropped + '........'
         self.update_popup(drop_feedback, msg)
         self.update_items()
     def use_handler(self):
         # handles the use button
         solution = (self.entry.get()).upper()
-        inventory_names = game.inventory_names
         msg = 'Using ' + solution + '........'
-        if solution in game.inventory_names:
-            if items[solution].has_use_remaining():
-                items[solution].use()
-                use_feedback = game.solve(solution, items)
-                self.room_description.configure(text = game.current_room.contextual_description())
-                self.room_description.text = game.current_room.contextual_description()
+        if solution in self.game.inventory_names:
+            if self.items[solution].has_use_remaining():
+                self.items[solution].use()
+                use_feedback = self.game.solve(solution, self.items)
+                self.room_description.configure(text = self.game.current_room.contextual_description())
+                self.room_description.text = self.game.current_room.contextual_description()
                 self.room_warning.configure(text = '')
                 self.room_warning.text = ''
                 self.update_popup(use_feedback, msg)
@@ -148,8 +141,8 @@ class GameInterface:
         # updates items displayed in current room
         self.room_items.configure(text = EMPTY)
         self.room_items_text = EMPTY
-        if len(game.current_room.items) > 0:
-            for each in game.current_room.items:
+        if len(self.game.current_room.items) > 0:
+            for each in self.game.current_room.items:
                 self.room_items_text += each.name + ' here in the room.\n'
             self.room_items.configure(text = self.room_items_text)
             self.room_items.text = self.room_items_text
@@ -187,13 +180,13 @@ class GameInterface:
     def move(self, movement, moved):
         # handles button clicks indicating movement in any of the 4 directions
         if moved:
-            current_room_image = PhotoImage(file = game.current_room.picture)
+            current_room_image = PhotoImage(file = self.game.current_room.picture)
             self.image.configure(image = current_room_image)
             self.image.image = current_room_image
-            self.room_name.configure(text = game.current_room.name)
-            self.room_name.text = game.current_room.name
-            self.room_description.configure(text = game.current_room.contextual_description())
-            self.room_description.text = game.current_room.contextual_description()
+            self.room_name.configure(text = self.game.current_room.name)
+            self.room_name.text = self.game.current_room.name
+            self.room_description.configure(text = self.game.current_room.contextual_description())
+            self.room_description.text = self.game.current_room.contextual_description()
             self.update_items()
             self.room_warning.configure(text = EMPTY)
             self.room_warning.text = EMPTY
@@ -203,19 +196,19 @@ class GameInterface:
             self.room_warning.text = movement
     def process_north(self):
         # bridge between the north button and the move method
-        movement, moved = game.move(rooms,'N', puzzles_n_monsters)
+        movement, moved = self.game.move(self.rooms,'N', self.puzzles_n_monsters)
         self.move(movement, moved)
     def process_south(self):
         # bridge between the south button and the move method
-        movement, moved = game.move(rooms,'S', puzzles_n_monsters)
+        movement, moved = self.game.move(self.rooms,'S', self.puzzles_n_monsters)
         self.move(movement, moved)
     def process_east(self):
         # bridge between the east button and the move method
-        movement, moved = game.move(rooms,'E', puzzles_n_monsters)
+        movement, moved = self.game.move(self.rooms,'E', self.puzzles_n_monsters)
         self.move(movement, moved)
     def process_west(self):
         # bridge between the west button and the move method
-        movement, moved = game.move(rooms,'W', puzzles_n_monsters)
+        movement, moved = self.game.move(self.rooms,'W', self.puzzles_n_monsters)
         self.move(movement, moved)
     def process_look(self):
         # bridge between the look button and the look_hanlder method
@@ -240,16 +233,26 @@ class GameInterface:
     def process_inventory(self):
         # bridge between the inventory button and the inventory_hanlder method
         title = 'Inventory'
-        if len(game.inventory) == 0:
+        if len(self.game.inventory) == 0:
             msg = 'You have nothing in your inventory'
             self.popupmsg(title, msg, '')
         else:
             msg = 'Your Inventory has the following:\n'
-            for each in game.inventory_names:
+            for each in self.game.inventory_names:
                 msg += each + '\n'
             self.popupmsg(title, msg, '')
 
 def main():
-    GameInterface()
+    # 
+    aquest_rooms_lst, acquest_rooms_keys = get_file('aquest_rooms.txt')
+    aquest_items_lst, acquest_items_keys = get_file('aquest_items.txt')
+    puzzles_n_monsters_lst, puzles_n_monsters_keys = get_file('puzzles_n_monsters.txt')
+
+    items = create_objects(aquest_items_lst, acquest_items_keys)
+    rooms = create_objects(aquest_rooms_lst, acquest_rooms_keys, [], items)
+    puzzles_n_monsters = create_objects(puzzles_n_monsters_lst, puzles_n_monsters_keys, rooms, items)
+        
+    game = Game(rooms)
+    GameInterface(game, items, rooms, puzzles_n_monsters)
 
 main()
